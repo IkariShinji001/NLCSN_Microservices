@@ -1,0 +1,170 @@
+version: '3'
+
+services:
+  apiGateway:
+    image: api_gateway:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api-gateway:/usr/src/apiGateway
+      - /usr/src/apiGateway/node_modules
+    depends_on:
+      - postgres_userService  # Thêm phần này để đảm bảo PostgreSQL khởi động trước apiGateway
+
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: my-rabbit
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      timeout: 20s
+      retries: 3
+
+  userService:
+    image: user_service:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./userService:/usr/src/userServices
+      - /usr/src/userServices/node_modules
+    command: npm start
+    depends_on:
+      - postgres_userService
+      - rabbitmq
+
+  postgres_userService:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: duyduy2003
+      POSTGRES_DB: UserService
+    depends_on: 
+    - rabbitmq
+  
+  notificationService:
+    image: notification_service:latest
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./notificationService:/usr/src/notificationService
+      - /usr/src/notificationService/node_modules
+    command: ["sh", "-c", "sleep 15 && npm start"]  # Delay for 10 seconds
+    depends_on:
+      - postgres_notificationService  
+      - rabbitmq
+
+  postgres_notificationService:
+    image: postgres:latest
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: duyduy2003
+      POSTGRES_DB: NotificationService
+    depends_on: 
+      - rabbitmq
+      
+  tableService:
+    image: table_service:latest
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./tableService:/usr/src/tableService
+      - /usr/src/tableService/node_modules
+    command: ["sh", "-c", "sleep 15 && npm start"]  # Delay for 10 seconds
+    depends_on:
+      - postgres_tableService
+      - rabbitmq
+
+  postgres_tableService:
+    image: postgres:latest
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: duyduy2003
+      POSTGRES_DB: TableService
+    depends_on: 
+      - rabbitmq
+      
+  billService:
+    image: bill_service:latest
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./billService:/usr/src/billService
+      - /usr/src/billService/node_modules
+    command: ["sh", "-c", "sleep 15 && npm start"]  # Delay for 10 seconds
+    depends_on:
+      - postgres_billService
+      - rabbitmq
+
+  postgres_billService:
+    image: postgres:latest
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: duyduy2003
+      POSTGRES_DB: BillService
+    depends_on: 
+      - rabbitmq
+  
+  buffetTicketService:
+    image: buffet_ticket_service:latest
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./buffetTicketService:/usr/src/buffetTicketService
+      - /usr/src/buffetTicketService/node_modules
+    command: ["sh", "-c", "sleep 15 && npm start"]  # Delay for 10 seconds
+    environment:
+      - CLOUD_NAME=${CLOUD_NAME}
+      - API_KEY=${API_KEY}
+      - API_SECRET=${API_SECRET}
+    depends_on:
+      - postgres_buffetTicketService
+      - rabbitmq
+
+  postgres_buffetTicketService:
+    image: postgres:latest
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: duyduy2003
+      POSTGRES_DB: BuffetTicketService
+    depends_on: 
+      - rabbitmq
+
+  foodService:
+    image: food_service:latest
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./foodService:/usr/src/foodService
+      - /usr/src/foodService/node_modules
+    command: ["sh", "-c", "sleep 15 && npm start"]  # Delay for 10 seconds
+    environment:
+      - CLOUD_NAME=${CLOUD_NAME}
+      - API_KEY=${API_KEY}
+      - API_SECRET=${API_SECRET}
+    depends_on:
+      - postgres_foodService
+      - rabbitmq
+
+  postgres_foodService:
+    image: postgres:latest
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: duyduy2003
+      POSTGRES_DB: FoodService
+    depends_on: 
+      - rabbitmq
